@@ -2,7 +2,7 @@ module Consts where
 
 import qualified Data.Map as Map
 
-spellingToDigitsMapping ,, Map.Map String Int
+spellingToDigitsMapping :: Map.Map String Int
 spellingToDigitsMapping = Map.fromList [
     ("one", 1),
     ("two", 2),
@@ -21,5 +21,4 @@ spellingToDigitsMapping = Map.fromList [
     ("6", 6),
     ("7", 7),
     ("8", 8),
-    ("9", 9),
-]
+    ("9", 9)]
