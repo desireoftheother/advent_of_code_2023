@@ -1,6 +1,6 @@
 import System.IO
 import Data.Char (isDigit, digitToInt)
-import Data.List (minimumBy)
+import Data.List (isInfixOf)
 import Data.List.Split (splitOn)
 import qualified Data.Map as Map
 
@@ -25,15 +25,47 @@ spellingToDigitsMapping = Map.fromList [
     ("8", 8),
     ("9", 9)]
 
-splitLineBySpelling :: String -> String -> (String, [String])
-splitLineBySpelling line spelling = (spelling, splitOn spelling line)
+data Digit = Tens | Ones deriving (Show)
 
-createSpellingsMap :: String -> Map.Map String Int -> [(String, [String])]
-createSpellingsMap line spellingMapping = map (splitLineBySpelling line) (Map.keys spellingMapping)
+checkIfSpellingPresent :: String -> String -> (String, Bool)
+checkIfSpellingPresent line spelling = (spelling, isInfixOf spelling line)
+
+createSpellingsMap :: String -> Map.Map String Int -> [(String, Bool)]
+createSpellingsMap line spellingMapping = map ifSpellingPresent keys
+    where keys = Map.keys spellingMapping
+          ifSpellingPresent = checkIfSpellingPresent line
+
+ifSpellingPresent :: (String, Bool) -> Bool
+ifSpellingPresent (_, flag) = flag
+
+searchSpellingsIteratively :: String -> Int -> Map.Map String Int -> Digit -> String
+searchSpellingsIteratively line windowSize spellingMapping digit
+    | any ifSpellingPresent spellingPresence = spellingLookedUp
+    | otherwise = searchSpellingsIteratively line (windowSize + 1) spellingMapping digit
+     where spellingPresence = createSpellingsMap subs spellingToDigitsMapping
+           spellingLookedUp = fst $ head $ filter ifSpellingPresent $ spellingPresence
+           subs = case digit of 
+            Tens -> take windowSize line
+            Ones -> drop (length line - windowSize) line
+
+getCalibrationValues :: String -> Int
+getCalibrationValues line = 10*tensProcessed + onesProcessed
+    where searchSpelling = searchSpellingsIteratively line 1 spellingToDigitsMapping  
+          tens = Map.lookup (searchSpelling Tens) spellingToDigitsMapping
+          ones = Map.lookup (searchSpelling Ones) spellingToDigitsMapping
+          tensProcessed = case tens of 
+            Just x -> x
+            Nothing -> 0
+          onesProcessed = case ones of
+            Just x -> x
+            Nothing -> 0
+
 
 main = do
     withFile "input.txt" ReadMode (\fileHandler -> do
         contents <- hGetContents fileHandler
         let splittedLines = lines contents
-        print "2"
+        let processedLines = map getCalibrationValues splittedLines
+        let s = sum processedLines
+        print s
         )
